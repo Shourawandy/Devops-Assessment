@@ -1,0 +1,83 @@
+name: DevOps Assessment CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      # Checkout Repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Backend Dependencies
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm install
+
+      # Backend Test
+      - name: Run Backend Tests
+        working-directory: backend
+        run: npm test
+
+      # Frontend Dependencies
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm install
+
+      # Frontend Test
+      - name: Run Frontend Tests
+        working-directory: frontend
+        run: npm test
+
+      # Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build Backend Image
+      - name: Build Backend Image
+        run: |
+          docker build \
+          -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/devops-assessment-backend:${{ github.sha }} \
+          ./backend
+
+      # Push Backend Image
+      - name: Push Backend Image
+        run: |
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/devops-assessment-backend:${{ github.sha }}
+
+      # Build Frontend Image
+      - name: Build Frontend Image
+        run: |
+          docker build \
+          -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/devops-assessment-frontend:${{ github.sha }} \
+          ./frontend
+
+      # Push Frontend Image
+      - name: Push Frontend Image
+        run: |
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/devops-assessment-frontend:${{ github.sha }}
