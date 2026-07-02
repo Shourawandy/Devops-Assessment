@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# env / secrets
+.env
+.env.local
+*.pem
+*.key
+kubeconfig
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
