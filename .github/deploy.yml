@@ -81,3 +81,8 @@ jobs:
         run: |
           docker push \
           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/devops-assessment-frontend:${{ github.sha }}
+     
+      # Deployment (Placeholder)
+      - name: Kubernetes Deployment
+        run: |
+          echo "Deployment to EKS will be added in Task 3."
