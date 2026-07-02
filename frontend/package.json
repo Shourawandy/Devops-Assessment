@@ -1,0 +1,13 @@
+{
+  "name": "devops-assessment-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for DevOps assessment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node -e \"console.log('no unit tests configured - static frontend')\""
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
