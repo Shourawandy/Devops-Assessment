@@ -1,24 +1,44 @@
-# dependencies
+# Node
 node_modules/
-
-# env / secrets
-.env
-.env.local
-*.pem
-*.key
-kubeconfig
-
-# terraform
-.terraform/
-*.tfstate
-*.tfstate.backup
-*.tfvars
-
-# logs
-*.log
 npm-debug.log*
 
-# os / editor
-.DS_Store
+# Environment
+.env
+.env.*
+!.env.example
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+terraform.tfvars.json
+crash.log
+
+# Logs
+*.log
+logs/
+
+# Build
+dist/
+build/
+coverage/
+
+# IDE
 .vscode/
 .idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets & Keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
