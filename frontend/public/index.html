@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DevOps Assessment - Frontend</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #status { padding: 10px; border-radius: 6px; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>DevOps Assessment Frontend</h1>
+  <p>This page calls the backend API to check its status.</p>
+  <div id="status">Checking backend...</div>
+
+  <script>
+    fetch('/api/backend-status')
+      .then((r) => r.json())
+      .then((data) => {
+        document.getElementById('status').innerText =
+          'Backend status: ' + JSON.stringify(data);
+      })
+      .catch((err) => {
+        document.getElementById('status').innerText =
+          'Error reaching backend: ' + err;
+      });
+  </script>
+</body>
+</html>
