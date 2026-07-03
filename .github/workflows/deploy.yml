@@ -8,12 +8,13 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  BACKEND_REPO: devops-assessment-backend
-  FRONTEND_REPO: devops-assessment-frontend
   EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
 
+  BACKEND_REPO: devops-assessment-backend
+  FRONTEND_REPO: devops-assessment-frontend
+
 jobs:
-  build-and-push:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     permissions:
@@ -21,96 +22,152 @@ jobs:
 
     steps:
 
-    # =========================
-    # Checkout Code
-    # =========================
-    - name: Checkout Repository
-      uses: actions/checkout@v5
+      #########################################
+      # Checkout Repository
+      #########################################
 
-    # =========================
-    # Setup Node.js
-    # =========================
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Checkout Repository
+        uses: actions/checkout@v5
 
-    # =========================
-    # Backend Install & Test
-    # =========================
-    - name: Install Backend Dependencies
-      working-directory: backend
-      run: npm install
+      #########################################
+      # Setup Node
+      #########################################
 
-    - name: Run Backend Tests
-      working-directory: backend
-      run: npm test
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    # =========================
-    # Frontend Install & Test
-    # =========================
-    - name: Install Frontend Dependencies
-      working-directory: frontend
-      run: npm install
+      #########################################
+      # Backend
+      #########################################
 
-    - name: Run Frontend Tests
-      working-directory: frontend
-      run: npm test
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm install
 
-    # =========================
-    # AWS Login
-    # =========================
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v5
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Run Backend Tests
+        working-directory: backend
+        run: npm test
 
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
+      #########################################
+      # Frontend
+      #########################################
 
-    # =========================
-    # Build & Push Backend
-    # =========================
-    - name: Build Backend Image
-      run: |
-        docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${{ github.sha }} ./backend
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm install
 
-    - name: Push Backend Image
-      run: |
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${{ github.sha }}
+      - name: Run Frontend Tests
+        working-directory: frontend
+        run: npm test
 
-    # =========================
-    # Build & Push Frontend
-    # =========================
-    - name: Build Frontend Image
-      run: |
-        docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${{ github.sha }} ./frontend
+      #########################################
+      # AWS Login
+      #########################################
 
-    - name: Push Frontend Image
-      run: |
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${{ github.sha }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    # =========================
-    # Deploy to EKS
-    # =========================
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v4
-      with:
-        version: 'latest'
+      #########################################
+      # Login ECR
+      #########################################
 
-    - name: Configure kubeconfig
-      run: |
-        aws eks update-kubeconfig \
-          --region $AWS_REGION \
-          --name $EKS_CLUSTER_NAME
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Replace Image Tags in Kubernetes manifests
-      run: |
-        sed -i "s|IMAGE_TAG_PLACEHOLDER_BACKEND|${{ github.sha }}|g" k8s/backend-deployment.yaml
-        sed -i "s|IMAGE_TAG_PLACEHOLDER_FRONTEND|${{ github.sha }}|g" k8s/frontend-deployment.yaml
+      #########################################
+      # Build Backend
+      #########################################
 
-    - name: Deploy to Kubernetes (EKS)
-      run: |
-        kubectl apply -f k8s/
+      - name: Build Backend Image
+        run: |
+          docker build \
+            -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${{ github.sha }} \
+            ./backend
+
+      - name: Push Backend Image
+        run: |
+          docker push \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${{ github.sha }}
+
+      #########################################
+      # Build Frontend
+      #########################################
+
+      - name: Build Frontend Image
+        run: |
+          docker build \
+            -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${{ github.sha }} \
+            ./frontend
+
+      - name: Push Frontend Image
+        run: |
+          docker push \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${{ github.sha }}
+
+      #########################################
+      # Install kubectl
+      #########################################
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      #########################################
+      # Configure kubeconfig
+      #########################################
+
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $EKS_CLUSTER_NAME
+
+      #########################################
+      # Replace Image
+      #########################################
+
+      - name: Update Kubernetes Manifests
+        run: |
+          ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+          sed -i "s|ECR_REGISTRY|$ECR_REGISTRY|g" k8s/backend-deployment.yaml
+          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/backend-deployment.yaml
+
+          sed -i "s|ECR_REGISTRY|$ECR_REGISTRY|g" k8s/frontend-deployment.yaml
+          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/frontend-deployment.yaml
+
+      #########################################
+      # Deploy
+      #########################################
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f k8s/
+
+      #########################################
+      # Wait Rollout
+      #########################################
+
+      - name: Wait for Backend Deployment
+        run: |
+          kubectl rollout status deployment/backend --timeout=300s
+
+      - name: Wait for Frontend Deployment
+        run: |
+          kubectl rollout status deployment/frontend --timeout=300s
+
+      #########################################
+      # Show Resources
+      #########################################
+
+      - name: Show Kubernetes Resources
+        run: |
+          kubectl get nodes
+          kubectl get pods
+          kubectl get svc
+          kubectl get ingress
