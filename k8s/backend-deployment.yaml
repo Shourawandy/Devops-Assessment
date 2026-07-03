@@ -1,43 +1,7 @@
-name: Build, Push and Deploy
-
-on:
-  push:
-    branches:
-      - main
-
-env:
-  AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  BACKEND_REPOSITORY: devops-assessment-backend
-  FRONTEND_REPOSITORY: devops-assessment-frontend
-  EKS_CLUSTER_NAME: devops-assessment-cluster
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   name: backend
-  namespace: default
   labels:
     app: backend
 
@@ -46,15 +10,15 @@ spec:
 
   revisionHistoryLimit: 5
 
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-
   selector:
     matchLabels:
       app: backend
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
 
   template:
     metadata:
@@ -66,6 +30,7 @@ spec:
 
       containers:
         - name: backend
+
           image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:IMAGE_TAG
           imagePullPolicy: IfNotPresent
 
@@ -112,4 +77,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "sleep 10"]
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 10
