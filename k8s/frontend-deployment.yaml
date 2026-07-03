@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: <ECR_REGISTRY>/devops-assessment-frontend:IMAGE_TAG_PLACEHOLDER_FRONTEND
+          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-frontend:IMAGE_TAG
           imagePullPolicy: IfNotPresent
 
           ports:
