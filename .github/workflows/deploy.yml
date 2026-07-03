@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build, Push and Deploy
 
 on:
   push:
@@ -7,11 +7,9 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: 672729160447
-
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   BACKEND_REPOSITORY: devops-assessment-backend
   FRONTEND_REPOSITORY: devops-assessment-frontend
-
   EKS_CLUSTER_NAME: devops-assessment-cluster
 
 jobs:
@@ -22,7 +20,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -36,83 +34,58 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      ####################################################
-      # Build Backend
-      ####################################################
-
       - name: Build Backend Image
         run: |
-          docker build \
-            -t $BACKEND_REPOSITORY:${{ github.sha }} \
-            ./backend
+          docker build -t backend:${{ github.sha }} ./backend
+
+      - name: Build Frontend Image
+        run: |
+          docker build -t frontend:${{ github.sha }} ./frontend
 
       - name: Tag Backend Image
         run: |
-          docker tag \
-          $BACKEND_REPOSITORY:${{ github.sha }} \
+          docker tag backend:${{ github.sha }} \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:${{ github.sha }}
+
+      - name: Tag Frontend Image
+        run: |
+          docker tag frontend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:${{ github.sha }}
 
       - name: Push Backend Image
         run: |
           docker push \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:${{ github.sha }}
 
-      ####################################################
-      # Build Frontend
-      ####################################################
-
-      - name: Build Frontend Image
-        run: |
-          docker build \
-            -t $FRONTEND_REPOSITORY:${{ github.sha }} \
-            ./frontend
-
-      - name: Tag Frontend Image
-        run: |
-          docker tag \
-          $FRONTEND_REPOSITORY:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:${{ github.sha }}
-
       - name: Push Frontend Image
         run: |
           docker push \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:${{ github.sha }}
 
-      ####################################################
-      # Replace Image Tags
-      ####################################################
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
 
-      - name: Update Backend Image
-        run: |
-          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/backend-deployment.yaml
-
-      - name: Update Frontend Image
-        run: |
-          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/frontend-deployment.yaml
-
-      ####################################################
-      # Configure kubectl
-      ####################################################
-
-      - name: Update kubeconfig
+      - name: Configure kubeconfig
         run: |
           aws eks update-kubeconfig \
             --region $AWS_REGION \
             --name $EKS_CLUSTER_NAME
 
-      ####################################################
-      # Deploy
-      ####################################################
+      - name: Replace image tags
+        run: |
+          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/backend-deployment.yaml
+          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/frontend-deployment.yaml
 
-      - name: Deploy to Kubernetes
+      - name: Deploy to EKS
         run: |
           kubectl apply -f k8s/
 
-      ####################################################
-      # Verify
-      ####################################################
-
-      - name: Check Deployments
+      - name: Verify Backend Rollout
         run: |
-          kubectl rollout status deployment/backend
-          kubectl rollout status deployment/frontend
+          kubectl rollout status deployment/backend --timeout=5m
+
+      - name: Verify Frontend Rollout
+        run: |
+          kubectl rollout status deployment/frontend --timeout=5m
