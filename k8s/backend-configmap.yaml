@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: backend-config
+  namespace: default
+
+data:
+  PORT: "8080"
+  NODE_ENV: "production"
+  DB_HOST: "app-db.internal.svc.cluster.local"
