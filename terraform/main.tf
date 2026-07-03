@@ -1,8 +1,8 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  environment          = var.environment
-  cluster_name         = var.cluster_name
+  environment  = var.environment
+  cluster_name = var.cluster_name
 
   vpc_cidr             = var.vpc_cidr
   private_subnet_cidrs = var.private_subnet_cidrs
@@ -19,16 +19,16 @@ module "ecr" {
 module "eks" {
   source = "./modules/eks"
 
-  cluster_name        = var.cluster_name
-  kubernetes_version  = var.kubernetes_version
-  environment         = var.environment
-  vpc_id              = module.vpc.vpc_id
-  private_subnet_ids  = module.vpc.private_subnet_ids
-  public_subnet_ids   = module.vpc.public_subnet_ids
-  node_instance_type  = var.node_instance_type
-  node_desired_count  = var.node_desired_count
-  node_min_count      = var.node_min_count
-  node_max_count      = var.node_max_count
+  cluster_name       = var.cluster_name
+  kubernetes_version = var.kubernetes_version
+  environment        = var.environment
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  node_instance_type = var.node_instance_type
+  node_desired_count = var.node_desired_count
+  node_min_count     = var.node_min_count
+  node_max_count     = var.node_max_count
 }
 
 # CloudWatch log group for cluster + application monitoring
