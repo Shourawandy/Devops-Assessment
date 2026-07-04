@@ -1,9 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   name: frontend
-  namespace: default
   labels:
     app: frontend
 
@@ -22,48 +20,40 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-frontend:IMAGE_TAG
-          imagePullPolicy: IfNotPresent
+
+          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-frontend:519273718fb132eef419badc6a7e4c5b7c18374c
+
+          imagePullPolicy: Always
 
           ports:
             - containerPort: 3000
 
           env:
+            - name: PORT
+              value: "3000"
+
             - name: BACKEND_URL
               value: "http://backend:8080"
 
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 3
 
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 3000
             initialDelaySeconds: 15
             periodSeconds: 20
-            timeoutSeconds: 2
-            failureThreshold: 3
 
           resources:
             requests:
               cpu: "200m"
               memory: "256Mi"
+
             limits:
               cpu: "500m"
               memory: "512Mi"
-
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            allowPrivilegeEscalation: false
-
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "sleep 10"]

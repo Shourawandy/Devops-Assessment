@@ -8,17 +8,9 @@ metadata:
 spec:
   replicas: 2
 
-  revisionHistoryLimit: 5
-
   selector:
     matchLabels:
       app: backend
-
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
 
   template:
     metadata:
@@ -26,13 +18,12 @@ spec:
         app: backend
 
     spec:
-      terminationGracePeriodSeconds: 30
-
       containers:
         - name: backend
 
-          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:IMAGE_TAG
-          imagePullPolicy: IfNotPresent
+          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:519273718fb132eef419badc6a7e4c5b7c18374c
+
+          imagePullPolicy: Always
 
           ports:
             - containerPort: 8080
@@ -49,8 +40,6 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 3
 
           livenessProbe:
             httpGet:
@@ -58,26 +47,12 @@ spec:
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
-            timeoutSeconds: 2
-            failureThreshold: 3
 
           resources:
             requests:
               cpu: "200m"
               memory: "256Mi"
+
             limits:
               cpu: "500m"
               memory: "512Mi"
-
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            allowPrivilegeEscalation: false
-
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - sleep 10
