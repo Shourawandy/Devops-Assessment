@@ -1,32 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   name: backend
   labels:
     app: backend
-
 spec:
   replicas: 2
-
   selector:
     matchLabels:
       app: backend
-
   template:
     metadata:
       labels:
         app: backend
-
     spec:
       containers:
         - name: backend
           image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:IMAGE_TAG
           imagePullPolicy: Always
-
           ports:
             - containerPort: 8080
-
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
           envFrom:
             - configMapRef:
                 name: backend-config
