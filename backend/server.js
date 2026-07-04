@@ -13,7 +13,16 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Example endpoint the frontend calls
+// ADD THIS NEW ENDPOINT
+app.get('/api/backend-status', (req, res) => {
+  res.status(200).json({
+    backend: {
+      status: 'ok'
+    }
+  });
+});
+
+// Existing endpoint
 app.get('/api/info', (req, res) => {
   res.status(200).json({
     service: 'backend',
