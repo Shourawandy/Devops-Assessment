@@ -4,25 +4,41 @@
   <meta charset="UTF-8" />
   <title>DevOps Assessment - Frontend</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    #status { padding: 10px; border-radius: 6px; background: #f0f0f0; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+
+    #status {
+      padding: 10px;
+      border-radius: 6px;
+      background: #f0f0f0;
+      font-weight: bold;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>DevOps Assessment Frontend</h1>
   <p>This page calls the backend API to check its status.</p>
+
   <div id="status">Checking backend...</div>
 
   <script>
-    fetch('/api/backend-status')
-      .then((r) => r.json())
+    fetch('/api/health')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => {
         document.getElementById('status').innerText =
-          'Backend status: ' + JSON.stringify(data);
+          'Backend status: ' + data.status;
       })
       .catch((err) => {
         document.getElementById('status').innerText =
-          'Error reaching backend: ' + err;
+          'Error reaching backend: ' + err.message;
       });
   </script>
 </body>
