@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: backend
   labels:
@@ -20,9 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-
-          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:519273718fb132eef419badc6a7e4c5b7c18374c
-
+          image: 672729160447.dkr.ecr.us-east-1.amazonaws.com/devops-assessment-backend:IMAGE_TAG
           imagePullPolicy: Always
 
           ports:
@@ -33,26 +32,3 @@ spec:
                 name: backend-config
             - secretRef:
                 name: backend-db-secret
-
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
-
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 15
-            periodSeconds: 20
-
-          resources:
-            requests:
-              cpu: "200m"
-              memory: "256Mi"
-
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
